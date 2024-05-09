@@ -1,5 +1,5 @@
 module "network" {
-  source = "D:/iti/terraform/network"
+  source = "./network"
   Vcidr= var.Vcidr
   region= var.region
   Vpublic_cidr1= var.Vpublic_cidr1
