@@ -2,7 +2,7 @@ resource "aws_lb" "example" {
   name               =  "${var.commenname}loadbalancer"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
+  security_groups    = [aws_security_group.alb.id]
   subnets            = [module.network.subnetpub1.id,module.network.subnetpub2.id]
 
   tags = {
@@ -28,7 +28,7 @@ resource "aws_lb_listener" "example" {
   }
 }
 
-resource "aws_security_group" "alb_to_ec2_sg" {
+resource "aws_security_group" "alb" {
   name        = "${var.commenname}-alb"
   vpc_id      = module.network.vpc_id
 
