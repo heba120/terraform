@@ -3,7 +3,7 @@ resource "aws_lb" "example" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = [module.network.subnetpub1.id,module.network.subnetpub2.id]
+  subnets            = [module.network.subnetpub1.id, module.network.subnetpub2.id]
 
   tags = {
     Name = "${var.commenname}loadbalancer"
@@ -29,7 +29,6 @@ resource "aws_lb_listener" "example" {
 }
 
 resource "aws_security_group" "alb" {
-  name        = "${var.commenname}-alb"
   vpc_id      = module.network.vpc_id
 
   // Allow inbound traffic from ALB
@@ -53,3 +52,9 @@ resource "aws_security_group" "alb" {
   }
 }
 
+# Attach instances to target group
+resource "aws_lb_target_group_attachment" "alb_target_group_attachment" {
+  target_group_arn  = aws_lb_target_group.example.arn
+  target_id         = aws_instance.application.id
+  port              = 3000
+}
