@@ -12,7 +12,11 @@ resource "aws_route_table" "publicroutetable" {
 #create private route table
 resource "aws_route_table" "privateroutetable" {
   vpc_id = aws_vpc.main.id
-   tags = {
+  route {
+    cidr_block = var.Vpubrouttable_cidr
+    nat_gateway_id = aws_nat_gateway.example.id
+  }
+  tags = {
     Name = "privroute"
   }
 }
@@ -26,4 +30,3 @@ resource "aws_route_table_association" "prev" {
   subnet_id      = aws_subnet.private1.id
   route_table_id = aws_route_table.privateroutetable.id
 }
-
