@@ -1,10 +1,12 @@
 trigger:
   branches:
     include:
-    - main
+      - main
 
 pr:
-- main
+  branches:
+    include:
+      - main
 
 pool:
   name: AgentPool
@@ -31,7 +33,8 @@ parameters:
 
 steps:
 - script: |
-    echo success
+    echo "Starting the pipeline execution"
+  displayName: 'Initial Step'
 
 - task: AWSShellScript@1
   inputs:
@@ -43,25 +46,23 @@ steps:
       terraform init  
 
       # Create or select Terraform workspace
-      if ! terraform workspace select ${{ parameters.workspace }}; then
-        terraform workspace new ${{ parameters.workspace }}
-      fi
+      terraform workspace select ${{ parameters.workspace }} || terraform workspace new ${{ parameters.workspace }}
 
       # Run Terraform plan for pull requests on main
-      if [ "$(Build.Reason)" = "PullRequest" ]; then
+      if [ "$(Build.Reason)" == "PullRequest" ]; then
         terraform plan -var-file=${{ parameters.workspace }}-variables.tfvars
 
       # Run Terraform apply for merge/push on main 
-      elif [ "$(Build.Reason)" = "IndividualCI" ]; then
+      elif [ "$(Build.Reason)" == "IndividualCI" ]; then
          terraform apply -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
 
        # Run Terraform apply or destroy for manual runs 
-      elif [ "$(Build.Reason)" = "Manual" ] || [ "$(Build.Reason)" = "IndividualCI" ]; then
+      elif [ "$(Build.Reason)" == "Manual" ]; then
 
-        if [ "${{ parameters.action }}" = "apply" ]; then
+        if [ "${{ parameters.action }}" == "apply" ]; then
           terraform apply -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
     
-        elif [ "${{ parameters.action }}" = "destroy" ]; then
+        elif [ "${{ parameters.action }}" == "destroy" ]; then
           terraform destroy -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
 
         else
@@ -71,6 +72,3 @@ steps:
         
       fi
   displayName: 'Run Terraform'
-
-
-
