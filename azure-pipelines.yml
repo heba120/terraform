@@ -1,104 +1,77 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
   branches:
     include:
-      - '*'
+    - main
 
 pr:
-  branches:
-    include:
-      - '*'
+- main
 
 pool:
-  name: AgentPool
+  name: aws-self-hosted-agent
 
-# variables: # Optional but recommended for maintainability
-#   terraformWorkingDirectory: 'terraform'  # Path to your Terraform configuration
+variables:
+  AWS_SERVICE_CONNECTION: 'azure_user_SC'
 
-# Define the stages, jobs, and steps
-stages:
-- stage: Plan
-  displayName: Plan
-  jobs:
-  - job: Plan
-    displayName: Plan
-    steps:
-    - checkout: self # Necessary to checkout code
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -y unzip
-      displayName: 'Install Unzip'
-    - task: TerraformInstaller@1
-      inputs:
-        terraformVersion: 'latest'
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'aws'
-        command: 'init'
-        backendServiceAWS: 'AWS for terraform'
-        backendAWSBucketName: 'terraform-s3-day2'
-        backendAWSKey: 'terraform.tfstate'
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'aws'
-        command: 'plan'
-        environmentServiceNameAWS: 'AWS for terraform'
-    # - script: |
-    #     sudo apt-get update
-    #     sudo apt-get install -y gnupg software-properties-common curl
-    #     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    #     sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    #     sudo apt-get update
-    #     sudo apt-get install -y terraform
-    #   displayName: 'Install Terraform'
-    # - script: |
-    #     cd $(terraformWorkingDirectory)
-    #     terraform init -reconfigure
-    #     terraform plan
-    #   displayName: 'Terraform Plan'
-    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest')) # Necessary to run only on PR
+parameters:
+- name: action
+  displayName: 'Select the Action to Perform'
+  type: string
+  default: 'apply'
+  values:
+  - apply
+  - destroy
 
-- stage: Apply
-  displayName: Apply
-  jobs:
-  - job: Apply
-    displayName: Apply
-    steps:
-    - checkout: self # Necessary to checkout code
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -y unzip
-      displayName: 'Install Unzip'
-    - task: TerraformInstaller@1
-      inputs:
-        terraformVersion: 'latest'
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'aws'
-        command: 'init'
-        backendServiceAWS: 'AWS for terraform'
-        backendAWSBucketName: 'terraform-s3-day2'
-        backendAWSKey: 'terraform.tfstate'
-    - task: TerraformTaskV4@4
-      inputs:
-        provider: 'aws'
-        command: 'apply'
-        environmentServiceNameAWS: 'AWS for terraform'
-    # - script: |
-    #     sudo apt-get update
-    #     sudo apt-get install -y gnupg software-properties-common curl
-    #     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    #     sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    #     sudo apt-get update
-    #     sudo apt-get install -y terraform
-    #   displayName: 'Install Terraform'
-    # - script: |
-    #     cd $(terraformWorkingDirectory)
-    #     terraform init -reconfigure
-    #     terraform apply -auto-approve
-    #   displayName: 'Terraform Apply'
-    condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI')) # Necessary to run only on merge
+- name: workspace
+  displayName: 'Terraform Workspace Choice'
+  type: string
+  default: 'dev'
+  values:
+  - dev
+  - prod
+
+steps:
+- script: |
+    echo Test => Hello, world!
+  displayName: 'Test script'
+
+- task: AWSShellScript@1
+  inputs:
+    awsCredentials: '$(AWS_SERVICE_CONNECTION)'
+    regionName: 'us-east-1'
+    scriptType: 'inline'
+    inlineScript: |
+      cd TerraformCode
+      terraform init  
+
+      # Create or select Terraform workspace
+      if ! terraform workspace select ${{ parameters.workspace }}; then
+        terraform workspace new ${{ parameters.workspace }}
+      fi
+
+      # Run Terraform plan for pull requests on main
+      if [ "$(Build.Reason)" = "PullRequest" ]; then
+        terraform plan -var-file=${{ parameters.workspace }}-variables.tfvars
+
+      # Run Terraform apply for merge/push on main 
+      elif [ "$(Build.Reason)" = "IndividualCI" ]; then
+         terraform apply -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
+
+       # Run Terraform apply or destroy for manual runs 
+      elif [ "$(Build.Reason)" = "Manual" ] || [ "$(Build.Reason)" = "IndividualCI" ]; then
+
+        if [ "${{ parameters.action }}" = "apply" ]; then
+          terraform apply -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
+    
+        elif [ "${{ parameters.action }}" = "destroy" ]; then
+          terraform destroy -auto-approve -var-file=${{ parameters.workspace }}-variables.tfvars
+
+        else
+          echo "Invalid action selected. Please choose either 'apply' or 'destroy'."
+          exit 1
+        fi
+        
+      fi
+  displayName: 'Run Terraform'
+
+
+
