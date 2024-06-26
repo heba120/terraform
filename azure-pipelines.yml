@@ -18,9 +18,8 @@ parameters:
   - name: action
     displayName: 'choose'
     type: string
-    default: 'plan'
+    default: 'destroy'
     values:
-      - plan
       - apply
       - destroy
 
