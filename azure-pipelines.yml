@@ -18,6 +18,7 @@ parameters:
   type: string
   default: 'apply'
   values:
+  - plan
   - apply
   - destroy
 
@@ -31,8 +32,7 @@ parameters:
 
 steps:
 - script: |
-    echo Test => Hello, world!
-  displayName: 'Test script'
+    echo success
 
 - task: AWSShellScript@1
   inputs:
