@@ -36,13 +36,6 @@ steps:
   - script: |
       echo testsuccess
     displayName: 'test'
-
-  - script: |
-      # Download and install Terraform
-      curl -o /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
-      unzip /tmp/terraform.zip -d /usr/local/bin
-      terraform -v
-    displayName: 'Install Terraform'
     
   - task: AWSShellScript@1
     inputs:
