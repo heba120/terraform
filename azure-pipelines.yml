@@ -18,7 +18,7 @@ parameters:
   - name: action
     displayName: 'choose'
     type: string
-    default: 'destroy'
+    default: 'apply'
     values:
       - apply
       - destroy
