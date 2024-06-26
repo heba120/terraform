@@ -43,7 +43,6 @@ steps:
       regionName: 'us-east-1'
       scriptType: 'inline'
       inlineScript: |
-        cd TerraformCode
         terraform init  
 
         # Create or select Terraform workspace
