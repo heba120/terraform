@@ -7,14 +7,13 @@ pr:
 - main
 
 pool:
-  name: aws-self-hosted-agent
+  name: AgentPool
 
 variables:
-  AWS_SERVICE_CONNECTION: 'azure_user_SC'
+  AWS_SERVICE_CONNECTION: 'aws'
 
 parameters:
 - name: action
-  displayName: 'Select the Action to Perform'
   type: string
   default: 'apply'
   values:
@@ -23,7 +22,7 @@ parameters:
   - destroy
 
 - name: workspace
-  displayName: 'Terraform Workspace Choice'
+  displayName: 'choose workspace'
   type: string
   default: 'dev'
   values:
